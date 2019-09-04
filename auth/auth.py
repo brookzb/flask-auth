@@ -7,14 +7,14 @@ import jwt  # pip install pyjwt.PyJWT is a Python library which allows you to en
 from functools import wraps
 import datetime
 
-from models.model import User
+from models.model import User, Company
 
 
-def generate_token(api_users):
+def generate_token(company_obj):
     expiration = 3600
     s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)  # expiration是过期时间
-    token = s.dumps({'public_id': api_users.public_id}).decode('ascii')
-    return token, expiration
+    token = s.dumps({'app_id': company_obj.app_id, 'code': company_obj.code}).decode('ascii')
+    return token, expiration, company_obj.code
 
 
 def required_token(f):
@@ -30,7 +30,7 @@ def required_token(f):
         s = Serializer(current_app.config['SECRET_KEY'])
         try:
             data = s.loads(token)
-            current_user = User.query.filter_by(public_id=data['public_id']).first()
+            current_company = Company.query.filter_by(app_id=data['app_id']).first()
         except SignatureExpired:
             # return None  # valid token,but expired
             return jsonify({'message': 'Token is expired'}), 401
@@ -38,7 +38,7 @@ def required_token(f):
             # return None  # invalid token
             return jsonify({'message': 'Token is invalid'}), 401
 
-        return f(current_user, *args, **kwargs)
+        return f(current_company, *args, **kwargs)
 
     return decorated
 

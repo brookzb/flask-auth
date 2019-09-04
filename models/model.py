@@ -36,6 +36,7 @@ class Company(BaseModel, db.Model):
     address = db.Column(db.String(64), comment='联系地址')
     app_id = db.Column(db.String(64), comment='接口账号')
     app_key = db.Column(db.String(64), comment='接口秘钥')
+    admin = db.Column(db.Boolean, default=True, comment='是否超级管理')
 
 
 # 用户表

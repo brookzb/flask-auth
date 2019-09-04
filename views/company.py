@@ -18,62 +18,62 @@ def login():
     if request.method == 'POST':
         app_id = request.form['appid']
         app_key = request.form['appkey']
-    else :
+    else:
         app_id = request.args.get('appid')
         app_key = request.args.get('appkey')
 
-    print("app_id", app_id)
-    print("app_key", app_key)
     company_obj = Company.query.filter_by(app_id=app_id).first()
-    print("company_obj", company_obj.app_key)
 
     if not company_obj:
-        return common.falseReturn('授权无效','')
+        return common.falseReturn('检查appid', '')
 
     if app_key == company_obj.app_key:
-        token, exp = auths.generate_token(app_id)
+        token, exp, code = auths.generate_token(company_obj)
+        return jsonify({'token': token.decode('UTF-8'), 'expire': exp, 'code': code})
 
-    # if check_password_hash(user.password, auth.password):
-    #     token, exp = auths.generate_token(user)
-    #
-    #     return jsonify({'token': token.decode('UTF-8'), 'expire': exp})
-    #
-    # return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-    return """token"""
+    return common.falseReturn('授权无效', '')
 
 
-# @users_opt.route('/list', methods=['GET'])
-# @auths.required_token
-# def get_all_users(current_user):
-#     # To mimic this API call via Postman,
-#     # include 'x-access-token' with the token value obtained from login call
-#
-#     if not current_user.admin:
-#         return jsonify({'message': 'You are not authorized to see all users!'})
-#
-#     users = User.query.all()
-#     output = []
-#     for user in users:
-#         user_data = {'public_id': user.public_id, 'name': user.name, 'password': user.password, 'admin': user.admin}
-#         output.append(user_data)
-#
-#     return jsonify({'users': output})
-#
-#
-# @users_opt.route('/list/<public_id>', methods=['GET'])
-# @auths.required_token
-# def get_one_user(current_user, public_id):
-#     if not current_user.admin:
-#         return jsonify({'message': 'You are not authorized see ny user data!'})
-#
-#     user = User.query.filter_by(public_id=public_id).first()
-#     if not user:
-#         return jsonify(common.falseReturn('', 'User not found!'))
-#
-#     user_data = {'public_id': user.public_id, 'name': user.name, 'password': user.password, 'admin': user.admin}
-#     return jsonify({'user': user_data})
-#
-#
+@company_opt.route('/list', methods=['GET'])
+@auths.required_token
+def get_one_user(current_company):
+    if not current_company.admin:
+        return jsonify({'message': 'You are not authorized see ny user data!'})
+
+    company = Company.query.all()
+    if not company:
+        return jsonify(common.falseReturn('', 'User not found!'))
+
+    output = []
+    for com in company:
+        com_data = {'code': com.code, 'name': com.name, 'account': com.account, 'cycle': com.cycle,
+                    'long': com.long, 'short': com.short, 'contacts': com.contacts, 'phone': com.phone,
+                    'email': com.email, 'address': com.address, 'status': com.status, 'update_time': com.update_time}
+        output.append(com_data)
+    return jsonify({'company': output})
+
+
+@company_opt.route('/detail/<company_code>', methods=['GET'])
+@auths.required_token
+def get_all_users(current_company, company_code):
+    # To mimic this API call via Postman,
+    # include 'x-access-token' with the token value obtained from login call
+
+    print(type(current_company.code), type(company_code))
+    if current_company.code != int(company_code):
+        return common.falseReturn('无效公司', '')
+
+    com = Company.query.filter_by(code=company_code).first()
+    if not com:
+        return common.trueReturn(company_code, '公司code不存在')
+
+    com_data = {'code': com.code, 'name': com.name, 'account': com.account, 'cycle': com.cycle,
+                'long': com.long, 'short': com.short, 'contacts': com.contacts, 'phone': com.phone,
+                'email': com.email, 'address': com.address, 'status':com.status, 'update_time': com.update_time}
+
+    return jsonify({'company': com_data})
+
+
 # @users_opt.route('/add', methods=['POST'])
 # @auths.required_token
 # def create_user(current_user):
