@@ -1,20 +1,18 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from flask import request, jsonify, make_response
-from werkzeug.security import generate_password_hash, check_password_hash
-import uuid
+from flask import request, jsonify
 
 from auth import auth as auths
 from models.model import Company
 from utils.exts import db
-from utils import common
+from utils import common, randstr
 
 from flask import Blueprint
 company_opt = Blueprint('company', __name__)
 
 
-@company_opt.route('/token', methods=['GET', 'POST'])
-def login():
+@company_opt.route('/token', methods=['POST'])
+def token():
     if request.method == 'POST':
         app_id = request.form['appid']
         app_key = request.form['appkey']
@@ -36,7 +34,7 @@ def login():
 
 @company_opt.route('/list', methods=['GET'])
 @auths.required_token
-def get_one_user(current_company):
+def get_all_company(current_company):
     if not current_company.admin:
         return jsonify({'message': 'You are not authorized see ny user data!'})
 
@@ -53,15 +51,49 @@ def get_one_user(current_company):
     return jsonify({'company': output})
 
 
+@company_opt.route('/add', methods=['POST'])
+@auths.required_token
+def create_user(current_company):
+    if not current_company.admin:
+        return jsonify({'message': 'You are not authorized to create a user!'})
+
+    data = request.get_json()
+    appid = randstr.generate_random_str()
+    appkey = randstr.generate_random_str(32)
+
+    new_company = Company(code=data['code'], name=data['name'], contacts=data['contacts'], account=data['account'],
+                          cycle=data['cycle'], address=data['address'], short=data['short'], long=data['long'],
+                          email=data['email'], phone=data['phone'], status=data['status'], app_id=appid, app_key=appkey)
+    db.session.add(new_company)
+    db.session.commit()
+
+    return jsonify(common.trueReturn({'name': data['name'], 'code': data['code'], 'appid': appid, 'appkey': appkey},
+                                     'create success!'))
+
+
+@company_opt.route('/del/<company_code>', methods=['DELETE'])
+@auths.required_token
+def delete_user(current_company, company_code):
+    if not current_company.admin:
+        return jsonify({'message': 'You are not authorized to delete a user!'})
+
+    company = Company.query.filter_by(code=company_code).first()
+    if not company:
+        return jsonify({'message': 'Company not found!'})
+
+    db.session.delete(company)
+    db.session.commit()
+    return common.trueReturn(company_code, 'Company is delete')
+
+
 @company_opt.route('/detail/<company_code>', methods=['GET'])
 @auths.required_token
-def get_all_users(current_company, company_code):
+def get_one_users(current_company, company_code):
     # To mimic this API call via Postman,
     # include 'x-access-token' with the token value obtained from login call
 
-    print(type(current_company.code), type(company_code))
     if current_company.code != int(company_code):
-        return common.falseReturn('无效公司', '')
+        return common.falseReturn(company_code, '无效公司')
 
     com = Company.query.filter_by(code=company_code).first()
     if not com:
@@ -69,66 +101,30 @@ def get_all_users(current_company, company_code):
 
     com_data = {'code': com.code, 'name': com.name, 'account': com.account, 'cycle': com.cycle,
                 'long': com.long, 'short': com.short, 'contacts': com.contacts, 'phone': com.phone,
-                'email': com.email, 'address': com.address, 'status':com.status, 'update_time': com.update_time}
+                'email': com.email, 'address': com.address, 'status': com.status, 'update_time': com.update_time}
 
     return jsonify({'company': com_data})
 
 
-# @users_opt.route('/add', methods=['POST'])
-# @auths.required_token
-# def create_user(current_user):
-#     if not current_user.admin:
-#         return jsonify({'message': 'You are not authorized to create a user!'})
-#
-#     data = request.get_json()
-#     print('Data is %s', data)
-#     hashed_pwd = generate_password_hash(data['password'], method='sha256')
-#     new_user = User(public_id=str(uuid.uuid4()), name=data['name'], password=hashed_pwd, admin=False)
-#     db.session.add(new_user)
-#     db.session.commit()
-#     return jsonify(common.trueReturn(data['name'], 'New user created!'))
-#
-#
-# @users_opt.route('/put/<public_id>', methods=['PUT'])
-# @auths.required_token
-# def promote_user(current_user, public_id):
-#     if not current_user.admin:
-#         return jsonify({'message': 'You are not authorized to promote a user!'})
-#
-#     user = User.query.filter_by(public_id=public_id).first()
-#     if not user:
-#         return jsonify({'message': 'User not found!'})
-#
-#     user.admin = True
-#     db.session.commit()
-#     return jsonify({'message': 'The user has been promoted!'})
-#
-#
-# @users_opt.route('/put/demote/<public_id>', methods=['PUT'])
-# @auths.required_token
-# def demote_user(current_user, public_id):
-#     if not current_user.admin:
-#         return jsonify({'message': 'You are not authorized to demote any user!'})
-#
-#     user = User.query.filter_by(public_id=public_id).first()
-#     if not user:
-#         return jsonify({'message': 'User not found!'})
-#
-#     user.admin = False
-#     db.session.commit()
-#     return jsonify({'message': 'The user has been demoted!'})
-#
-#
-# @users_opt.route('/del/<public_id>', methods=['DELETE'])
-# @auths.required_token
-# def delete_user(current_user, public_id):
-#     if not current_user.admin:
-#         return jsonify({'message': 'You are not authorized to delete a user!'})
-#
-#     user = User.query.filter_by(public_id=public_id).first()
-#     if not user:
-#         return jsonify({'message': 'User not found!'})
-#
-#     db.session.delete(user)
-#     db.session.commit()
-#     return jsonify({'message': 'The user has been deleted!'})
+@company_opt.route('/put/<company_code>', methods=['PUT'])
+@auths.required_token
+def put_company(current_company, company_code):
+    if not current_company.admin:
+        if current_company.code != int(company_code):
+            return common.falseReturn(company_code, '无权限修改')
+
+        company = Company.query.filter_by(code=company_code).first()
+        if not company:
+            return jsonify({'message': 'Company not found!'})
+
+        company.admin = True
+        db.session.commit()
+    else:
+        company = Company.query.filter_by(code=company_code).first()
+        if not company:
+            return jsonify({'message': 'Company not found!'})
+
+        company.admin = True
+        db.session.commit()
+
+    return common.falseReturn(company_code, 'Company is modify')

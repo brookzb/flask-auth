@@ -36,7 +36,7 @@ class Company(BaseModel, db.Model):
     address = db.Column(db.String(64), comment='联系地址')
     app_id = db.Column(db.String(64), comment='接口账号')
     app_key = db.Column(db.String(64), comment='接口秘钥')
-    admin = db.Column(db.Boolean, default=True, comment='是否超级管理')
+    admin = db.Column(db.Boolean, default=False, comment='是否超级管理')
 
 
 # 用户表
@@ -52,6 +52,10 @@ class User(BaseModel, db.Model):
     username = db.Column(db.String(50), comment='用户名')
     password = db.Column(db.String(128), comment='用户密码')
     admin = db.Column(db.Boolean, default=False, comment='是否管理员')
+
+    def __repr__(self):
+        """非必须, 用于在调试或测试时, 返回一个具有可读性的字符串表示模型."""
+        return '<USER %r>' % self.username
 
 
 # 分机表
