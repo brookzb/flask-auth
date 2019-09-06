@@ -8,6 +8,9 @@ from utils.exts import db
 from utils import common, randstr
 
 from flask import Blueprint
+
+from views.forms import RegisterCompanyForm
+
 company_opt = Blueprint('company', __name__)
 
 
@@ -57,18 +60,33 @@ def create_user(current_company):
     if not current_company.admin:
         return jsonify({'message': 'You are not authorized to create a user!'})
 
-    data = request.get_json()
     appid = randstr.generate_random_str()
     appkey = randstr.generate_random_str(32)
+    form = RegisterCompanyForm()
+    if form.validate_on_submit():
+        data = {
+            "company_code": form.company_code,
+            "company_name": form.company_name,
+            "contacts": form.contacts,
+            "mobile": form.mobile,
+            "address": form.address,
+            "billing_account": form.billing_account,
+            "billing_cycle": form.billing_cycle,
+            "long_distance": form.long_distance,
+            "short_distance": form.short_distance,
+            "appid": appid,
+            "appkey": appkey,
+            "status": True
+        }
+        new_company = Company(**data)
+        db.session.add(new_company)
+        db.session.commit()
+        return jsonify(common.trueReturn(data, 'create success!'))
+    else:
+        pass
 
-    new_company = Company(code=data['code'], name=data['name'], contacts=data['contacts'], account=data['account'],
-                          cycle=data['cycle'], address=data['address'], short=data['short'], long=data['long'],
-                          email=data['email'], phone=data['phone'], status=data['status'], app_id=appid, app_key=appkey)
-    db.session.add(new_company)
-    db.session.commit()
 
-    return jsonify(common.trueReturn({'name': data['name'], 'code': data['code'], 'appid': appid, 'appkey': appkey},
-                                     'create success!'))
+
 
 
 @company_opt.route('/del/<company_code>', methods=['DELETE'])

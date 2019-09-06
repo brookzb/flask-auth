@@ -18,25 +18,24 @@ class BaseModel(object):
     status = db.Column(db.Boolean, default=True, comment='状态')
 
 
-# 公司表
 class Company(BaseModel, db.Model):
     """
-    公司表  一个公司账号可以关联其他表中的多条记录
+    公司信息表
     """
     __tablename__ = 'company'
-    code = db.Column(db.Integer, comment='公司编号', unique=True)
-    name = db.Column(db.String(64), comment="公司名称")
-    account = db.Column(db.String(16), comment='计费账号')
-    cycle = db.Column(db.Integer, comment='计费周期')
-    long = db.Column(db.Float, comment='长途')
-    short = db.Column(db.Float, comment='市话')
+    company_code = db.Column(db.Integer, comment='公司编号', unique=True)
+    company_name = db.Column(db.String(64), comment="公司名称")
+    billing_account = db.Column(db.String(16), comment='计费账号')
+    billing_cycle = db.Column(db.Integer, comment='计费周期')
+    long_distance = db.Column(db.Float, comment='长途话费/分钟')
+    short_distance = db.Column(db.Float, comment='市话费/分钟')
     contacts = db.Column(db.String(32), comment='联系人')
     phone = db.Column(db.String(11), comment='手机号码')
     email = db.Column(db.String(32), comment='邮箱地址')
     address = db.Column(db.String(64), comment='联系地址')
     app_id = db.Column(db.String(64), comment='接口账号')
     app_key = db.Column(db.String(64), comment='接口秘钥')
-    admin = db.Column(db.Boolean, default=False, comment='是否超级管理')
+    is_admin = db.Column(db.Boolean, default=False, comment='是否超级管理')
 
 
 # 用户表
