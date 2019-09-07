@@ -1,3 +1,6 @@
-.idea/
-env/
-.git/
+*.pyc
+.git
+.idea
+*.swp
+logs/
+venv/

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from flask import request, jsonify
+from flask_restful import Resource
 
 from auth import auth as auths
 from models.model import Company
@@ -86,9 +87,6 @@ def create_user(current_company):
         pass
 
 
-
-
-
 @company_opt.route('/del/<company_code>', methods=['DELETE'])
 @auths.required_token
 def delete_user(current_company, company_code):
@@ -146,3 +144,17 @@ def put_company(current_company, company_code):
         db.session.commit()
 
     return common.falseReturn(company_code, 'Company is modify')
+
+
+class CompanyResourceApi(Resource):
+    def __init__(self):
+        pass
+
+    def get(self):
+        return {"data": "hello world"}
+
+    def post(self):
+        return {"data": "hello world"}
+
+    def put(self):
+        return {"data": "hello world"}

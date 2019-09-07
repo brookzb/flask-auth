@@ -2,12 +2,14 @@
 # -*- coding: utf-8 -*-
 
 from flask import Flask, jsonify
+from flask_restful import Api
 
 from utils.exts import db
 import config
 from utils import common, headers
 
 from views import todos, files, users, company, callcenter
+from views.company import CompanyResourceApi
 
 app = Flask(__name__)
 
@@ -22,11 +24,13 @@ app.config.from_object(config)
 app.after_request(headers._access_control)
 
 db.init_app(app)
+api = Api(app)
 
 
-@app.route('/')
-def hello_world():
-    return jsonify(common.falseReturn('/', 'Hello Flask!'))
+api.add_resource(CompanyResourceApi, "company_test/")
+# @app.route('/')
+# def hello_world():
+#     return jsonify(common.falseReturn('/', 'Hello Flask!'))
 
 
 if __name__ == '__main__':
