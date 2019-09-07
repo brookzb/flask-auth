@@ -1,10 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+import re
+
 from flask import request, jsonify
-from flask_restful import Resource
+from flask_restful import Resource, reqparse
 
 from auth import auth as auths
 from models.model import Company
+from utils.common import mobile_field, email_field
 from utils.exts import db
 from utils import common, randstr
 
@@ -148,12 +151,44 @@ def put_company(current_company, company_code):
 
 class CompanyResourceApi(Resource):
     def __init__(self):
-        pass
+        self.parser = reqparse.RequestParser()
+        self.parser.add_argument("company_code", type=str, required=True, location="form")
+        self.parser.add_argument("company_name", type=str, required=True, location="form")
+        self.parser.add_argument("contacts", type=str, required=True, location="form")
+        self.parser.add_argument("mobile", type=mobile_field, required=True, location="form")
+        self.parser.add_argument("email", type=email_field, required=True, location="form")
+        self.parser.add_argument("address", type=str, required=True, location="form")
+        self.parser.add_argument("billing_account", type=str, required=True, location="form")
+        self.parser.add_argument("billing_cycle", type=int, required=True, location="form")
+        self.parser.add_argument("long_distance", type=float, required=True, location="form")
+        self.parser.add_argument("short_distance", type=float, required=True, location="form")
 
     def get(self):
         return {"data": "hello world"}
 
     def post(self):
+        app_id = randstr.generate_random_str(16)
+        app_key = randstr.generate_random_str(32)
+        args = self.parser.parse_args(strict=True)
+        data = {
+            "company_code": args.company_code,
+            "company_name": args.company_name,
+            "contacts": args.contacts,
+            "mobile": args.mobile,
+            "email": args.email,
+            "address": args.address,
+            "billing_account": args.billing_account,
+            "billing_cycle": args.billing_cycle,
+            "long_distance": args.long_distance,
+            "short_distance": args.short_distance,
+            "app_id": app_id,
+            "app_key": app_key,
+            "status": True
+        }
+        new_company = Company(**data)
+        db.session.add(new_company)
+        db.session.commit()
+
         return {"data": "hello world"}
 
     def put(self):

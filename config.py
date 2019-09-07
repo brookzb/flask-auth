@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 SECRET_KEY = 'this is secret'
 
-DB_USER = 'brook'
-DB_PASSWORD = '123456.com'
-DB_HOST = '127.0.0.1'
-DB_DB = 'api_dev'
+DB_USER = 'root'
+DB_PASSWORD = 'Admin@9000'
+DB_HOST = '148.70.200.5:3306'
+DB_DB = 'blog'
 SQLALCHEMY_TRACK_MODIFICATIONS = True
 SQLALCHEMY_DATABASE_URI = 'mysql://' + DB_USER + ':' + DB_PASSWORD + '@' + DB_HOST + '/' + DB_DB
 SQLALCHEMY_ECHO = True

@@ -18,7 +18,7 @@ app.register_blueprint(files.files_opt, url_prefix="/api/v1/file")
 app.register_blueprint(todos.todos_opt, url_prefix="/api/v1/todo")
 app.register_blueprint(users.users_opt, url_prefix="/api/v1/user")
 app.register_blueprint(company.company_opt, url_prefix="/api/v1/company")
-app.register_blueprint(callcenter.call_opt, url_prefix="/api/v1/call")
+# app.register_blueprint(callcenter.call_opt, url_prefix="/api/v1/call")
 
 app.config.from_object(config)
 app.after_request(headers._access_control)
@@ -27,10 +27,7 @@ db.init_app(app)
 api = Api(app)
 
 
-api.add_resource(CompanyResourceApi, "company_test/")
-# @app.route('/')
-# def hello_world():
-#     return jsonify(common.falseReturn('/', 'Hello Flask!'))
+api.add_resource(CompanyResourceApi, "/company/")
 
 
 if __name__ == '__main__':

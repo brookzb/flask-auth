@@ -23,14 +23,14 @@ class Company(BaseModel, db.Model):
     公司信息表
     """
     __tablename__ = 'company'
-    company_code = db.Column(db.Integer, comment='公司编号', unique=True)
+    company_code = db.Column(db.String(16), comment='公司编号', unique=True)
     company_name = db.Column(db.String(64), comment="公司名称")
     billing_account = db.Column(db.String(16), comment='计费账号')
     billing_cycle = db.Column(db.Integer, comment='计费周期')
     long_distance = db.Column(db.Float, comment='长途话费/分钟')
     short_distance = db.Column(db.Float, comment='市话费/分钟')
     contacts = db.Column(db.String(32), comment='联系人')
-    phone = db.Column(db.String(11), comment='手机号码')
+    mobile = db.Column(db.String(11), comment='手机号码')
     email = db.Column(db.String(32), comment='邮箱地址')
     address = db.Column(db.String(64), comment='联系地址')
     app_id = db.Column(db.String(64), comment='接口账号')

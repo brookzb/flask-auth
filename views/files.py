@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 from flask import request, make_response, url_for, send_from_directory
-from urllib import quote
+from urllib.parse import quote
 import os, re
 # from werkzeug.utils import secure_filename
 
