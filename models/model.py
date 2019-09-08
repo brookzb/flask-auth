@@ -23,6 +23,7 @@ class Company(BaseModel, db.Model):
     公司信息表
     """
     __tablename__ = 'company'
+
     company_code = db.Column(db.String(16), comment='公司编号', unique=True)
     company_name = db.Column(db.String(64), comment="公司名称")
     billing_account = db.Column(db.String(16), comment='计费账号')

@@ -6,7 +6,7 @@ import string
 
 def generate_random_str(length):
     """
-    生成一个指定长度的随机字符串，其中
+    生成一个指定长度的随机字符串
     """
     str_list = [
         random.choice(string.digits + string.ascii_uppercase) for _ in range(length)

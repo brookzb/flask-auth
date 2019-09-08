@@ -1,13 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-import re
-
 from flask import request, jsonify
-from flask_restful import Resource, reqparse
+from flask_restful import Resource, reqparse, marshal_with
 
 from auth import auth as auths
 from models.model import Company
-from utils.common import mobile_field, email_field
+from utils.common import mobile_field, email_field, company_info_fields
 from utils.exts import db
 from utils import common, randstr
 
@@ -149,6 +147,7 @@ def put_company(current_company, company_code):
     return common.falseReturn(company_code, 'Company is modify')
 
 
+# TODO 增加权限校验
 class CompanyResourceApi(Resource):
     def __init__(self):
         self.parser = reqparse.RequestParser()
@@ -163,13 +162,40 @@ class CompanyResourceApi(Resource):
         self.parser.add_argument("long_distance", type=float, required=True, location="form")
         self.parser.add_argument("short_distance", type=float, required=True, location="form")
 
-    def get(self):
-        return {"data": "hello world"}
+    @marshal_with(company_info_fields)
+    def get(self, company_id):
+        """
+        查询公司详情
+        :param company_id:
+        :return:
+        """
+        company = Company.query.filter_by(id=company_id).first()
+        return company
+
+    def put(self, company_id):
+        """
+        更新企业信息
+        :param company_id:
+        :return:
+        """
+        company = Company.query.filter_by(id=company_id, status=True).first()
+        if not company:
+            pass
+        args = self.parser.parse_args(strict=False)
+        for field, value in args.items():
+            setattr(company, field, value)
+        db.session.commit()
+        return {"id": company.id}
 
     def post(self):
+        """
+        添加企业信息
+        :return:
+        """
         app_id = randstr.generate_random_str(16)
         app_key = randstr.generate_random_str(32)
         args = self.parser.parse_args(strict=True)
+        print(args.items(), args.mobile)
         data = {
             "company_code": args.company_code,
             "company_name": args.company_name,
@@ -189,7 +215,19 @@ class CompanyResourceApi(Resource):
         db.session.add(new_company)
         db.session.commit()
 
-        return {"data": "hello world"}
+        return {"id": new_company.id}
 
-    def put(self):
-        return {"data": "hello world"}
+    def delete(self, company_id):
+        """
+        删除企业信息
+        :param company_id:
+        :return:
+        """
+        company = Company.query.filter_by(id=company_id).first()
+        if not company:
+            pass
+        company.status = False
+        db.session.commit()
+
+        return {"id": company_id}
+

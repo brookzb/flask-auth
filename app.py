@@ -27,7 +27,7 @@ db.init_app(app)
 api = Api(app)
 
 
-api.add_resource(CompanyResourceApi, "/company/")
+api.add_resource(CompanyResourceApi, "/company/", "/company/<string:company_id>/")
 
 
 if __name__ == '__main__':
