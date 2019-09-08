@@ -1,154 +1,37 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from flask import request, jsonify
+from flask import request
 from flask_restful import Resource, reqparse, marshal_with
 
 from auth import auth as auths
+from auth.auth import authentication
 from models.model import Company
 from utils.common import mobile_field, email_field, company_info_fields
 from utils.exts import db
-from utils import common, randstr
-
-from flask import Blueprint
-
-from views.forms import RegisterCompanyForm
-
-company_opt = Blueprint('company', __name__)
+from utils import randstr
 
 
-@company_opt.route('/token', methods=['POST'])
-def token():
-    if request.method == 'POST':
-        app_id = request.form['appid']
-        app_key = request.form['appkey']
-    else:
-        app_id = request.args.get('appid')
-        app_key = request.args.get('appkey')
-
-    company_obj = Company.query.filter_by(app_id=app_id).first()
-
-    if not company_obj:
-        return common.falseReturn('检查appid', '')
-
-    if app_key == company_obj.app_key:
-        token, exp, code = auths.generate_token(company_obj)
-        return jsonify({'token': token.decode('UTF-8'), 'expire': exp, 'code': code})
-
-    return common.falseReturn('授权无效', '')
-
-
-@company_opt.route('/list', methods=['GET'])
-@auths.required_token
-def get_all_company(current_company):
-    if not current_company.admin:
-        return jsonify({'message': 'You are not authorized see ny user data!'})
-
-    company = Company.query.all()
-    if not company:
-        return jsonify(common.falseReturn('', 'User not found!'))
-
-    output = []
-    for com in company:
-        com_data = {'code': com.code, 'name': com.name, 'account': com.account, 'cycle': com.cycle,
-                    'long': com.long, 'short': com.short, 'contacts': com.contacts, 'phone': com.phone,
-                    'email': com.email, 'address': com.address, 'status': com.status, 'update_time': com.update_time}
-        output.append(com_data)
-    return jsonify({'company': output})
-
-
-@company_opt.route('/add', methods=['POST'])
-@auths.required_token
-def create_user(current_company):
-    if not current_company.admin:
-        return jsonify({'message': 'You are not authorized to create a user!'})
-
-    appid = randstr.generate_random_str()
-    appkey = randstr.generate_random_str(32)
-    form = RegisterCompanyForm()
-    if form.validate_on_submit():
-        data = {
-            "company_code": form.company_code,
-            "company_name": form.company_name,
-            "contacts": form.contacts,
-            "mobile": form.mobile,
-            "address": form.address,
-            "billing_account": form.billing_account,
-            "billing_cycle": form.billing_cycle,
-            "long_distance": form.long_distance,
-            "short_distance": form.short_distance,
-            "appid": appid,
-            "appkey": appkey,
-            "status": True
-        }
-        new_company = Company(**data)
-        db.session.add(new_company)
-        db.session.commit()
-        return jsonify(common.trueReturn(data, 'create success!'))
-    else:
+class TokenResourceApi(Resource):
+    def __init__(self):
         pass
 
-
-@company_opt.route('/del/<company_code>', methods=['DELETE'])
-@auths.required_token
-def delete_user(current_company, company_code):
-    if not current_company.admin:
-        return jsonify({'message': 'You are not authorized to delete a user!'})
-
-    company = Company.query.filter_by(code=company_code).first()
-    if not company:
-        return jsonify({'message': 'Company not found!'})
-
-    db.session.delete(company)
-    db.session.commit()
-    return common.trueReturn(company_code, 'Company is delete')
-
-
-@company_opt.route('/detail/<company_code>', methods=['GET'])
-@auths.required_token
-def get_one_users(current_company, company_code):
-    # To mimic this API call via Postman,
-    # include 'x-access-token' with the token value obtained from login call
-
-    if current_company.code != int(company_code):
-        return common.falseReturn(company_code, '无效公司')
-
-    com = Company.query.filter_by(code=company_code).first()
-    if not com:
-        return common.trueReturn(company_code, '公司code不存在')
-
-    com_data = {'code': com.code, 'name': com.name, 'account': com.account, 'cycle': com.cycle,
-                'long': com.long, 'short': com.short, 'contacts': com.contacts, 'phone': com.phone,
-                'email': com.email, 'address': com.address, 'status': com.status, 'update_time': com.update_time}
-
-    return jsonify({'company': com_data})
-
-
-@company_opt.route('/put/<company_code>', methods=['PUT'])
-@auths.required_token
-def put_company(current_company, company_code):
-    if not current_company.admin:
-        if current_company.code != int(company_code):
-            return common.falseReturn(company_code, '无权限修改')
-
-        company = Company.query.filter_by(code=company_code).first()
+    def get(self):
+        app_id = request.args.get('app_id')
+        app_key = request.args.get('app_key')
+        company = Company.query.filter_by(
+            app_id=app_id, app_key=app_key, status=True
+        ).first()
         if not company:
-            return jsonify({'message': 'Company not found!'})
+            return {"code": 401, "error_message": "企业不存在"}
 
-        company.admin = True
-        db.session.commit()
-    else:
-        company = Company.query.filter_by(code=company_code).first()
-        if not company:
-            return jsonify({'message': 'Company not found!'})
-
-        company.admin = True
-        db.session.commit()
-
-    return common.falseReturn(company_code, 'Company is modify')
+        token, exp, code = auths.generate_token(company)
+        data = {'token': token.decode("utf8"), 'expire': exp, 'code': code}
+        return data
 
 
-# TODO 增加权限校验
 class CompanyResourceApi(Resource):
+    method_decorators = [authentication]
+
     def __init__(self):
         self.parser = reqparse.RequestParser()
         self.parser.add_argument("company_code", type=str, required=True, location="form")
@@ -178,6 +61,8 @@ class CompanyResourceApi(Resource):
         :param company_id:
         :return:
         """
+        if not request.company.is_admin:
+            return {"code": 403, "error_message": "没有编辑权限"}
         company = Company.query.filter_by(id=company_id, status=True).first()
         if not company:
             pass
@@ -192,6 +77,8 @@ class CompanyResourceApi(Resource):
         添加企业信息
         :return:
         """
+        if not request.company.is_admin:
+            return {"code": 403, "error_message": "没有添加权限"}
         app_id = randstr.generate_random_str(16)
         app_key = randstr.generate_random_str(32)
         args = self.parser.parse_args(strict=True)
@@ -223,11 +110,40 @@ class CompanyResourceApi(Resource):
         :param company_id:
         :return:
         """
+        if not request.company.is_admin:
+            return {"code": 403, "error_message": "没有删除权限"}
         company = Company.query.filter_by(id=company_id).first()
         if not company:
-            pass
+            return {"code": 404, "error_message": "企业不存在"}
         company.status = False
         db.session.commit()
 
         return {"id": company_id}
 
+
+class CompanyListResourceApi(Resource):
+    method_decorators = [authentication]
+
+    def get(self):
+        if not request.company.is_admin:
+            return {"code": 403, "error_message": "没有查看企业列表权限"}
+
+        queryset = Company.query.all()
+        result = []
+        for query in queryset:
+            data = {
+                "id": query.id,
+                "company_code": query.company_code,
+                "company_name": query.company_name,
+                "billing_account": query.billing_account,
+                "billing_cycle": query.billing_cycle,
+                "long_distance": query.long_distance,
+                "short_distance": query.short_distance,
+                "contacts": query.contacts,
+                "mobile": query.mobile,
+                "email": query.email,
+                "address": query.address,
+                "status": query.status
+            }
+            result.append(data)
+        return {"data": result}

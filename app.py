@@ -9,7 +9,7 @@ import config
 from utils import common, headers
 
 from views import todos, files, users, company, callcenter
-from views.company import CompanyResourceApi
+from views.company import CompanyResourceApi, TokenResourceApi, CompanyListResourceApi
 
 app = Flask(__name__)
 
@@ -27,7 +27,9 @@ db.init_app(app)
 api = Api(app)
 
 
+api.add_resource(TokenResourceApi, "/token/")
 api.add_resource(CompanyResourceApi, "/company/", "/company/<string:company_id>/")
+api.add_resource(CompanyListResourceApi, "/company_list/")
 
 
 if __name__ == '__main__':

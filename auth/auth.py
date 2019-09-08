@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from itsdangerous import (TimedJSONWebSignatureSerializer
-                          as Serializer, BadSignature, SignatureExpired)
-from flask import jsonify, request, current_app
-import jwt  # pip install pyjwt.PyJWT is a Python library which allows you to encode and decode JSON Web Tokens (JWT)
-from functools import wraps
 import datetime
+from functools import wraps
+
+from flask_restful import abort
+from itsdangerous import BadSignature, SignatureExpired, \
+    TimedJSONWebSignatureSerializer as Serializer
+import jwt
+
+from flask import jsonify, request, current_app
 
 from models.model import User, Company
 
@@ -13,8 +16,10 @@ from models.model import User, Company
 def generate_token(company_obj):
     expiration = 3600
     s = Serializer(current_app.config['SECRET_KEY'], expires_in=expiration)  # expiration是过期时间
-    token = s.dumps({'app_id': company_obj.app_id, 'code': company_obj.code}).decode('ascii')
-    return token, expiration, company_obj.code
+    token = s.dumps(
+        {'app_id': company_obj.app_id, 'code': company_obj.company_code}
+    )
+    return token, expiration, company_obj.company_code
 
 
 def required_token(f):
@@ -41,6 +46,27 @@ def required_token(f):
         return f(current_company, *args, **kwargs)
 
     return decorated
+
+
+def authentication(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        token = request.headers.get("Accesstoken")
+        if not token:
+            abort(401, error_message="token缺失")
+        s = Serializer(current_app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token.encode("utf8"))
+            company = Company.query.filter_by(app_id=data['app_id']).first()  # TODO 是否根据考虑企业状态过滤
+            if not company:
+                abort(401, error_message="企业不存在")
+            request.company = company
+        except SignatureExpired:
+            abort(401, error_message="token过期")
+        except BadSignature:
+            abort(401, error_message="token错误")
+        return func(*args, **kwargs)
+    return wrapper
 
 
 def token_generate(api_users):
