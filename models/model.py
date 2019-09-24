@@ -17,6 +17,14 @@ class BaseModel(object):
     update_time = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)  # 记录的更新时间
     status = db.Column(db.Boolean, default=True, comment='状态')
 
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'create_time': self.create_time,
+            'update_time': self.update_time,
+            'status': self.status,
+        }
+
 
 class Company(BaseModel, db.Model):
     """
@@ -37,6 +45,25 @@ class Company(BaseModel, db.Model):
     app_id = db.Column(db.String(64), comment='接口账号')
     app_key = db.Column(db.String(64), comment='接口秘钥')
     is_admin = db.Column(db.Boolean, default=False, comment='是否超级管理')
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "create_time": self.create_time,
+            "update_time": self.update_time,
+            "status": self.status,
+            "company_code": self.company_code,
+            "company_name": self.company_name,
+            "billing_account": self.billing_account,
+            "billing_cycle": self.billing_cycle,
+            "long_distance": self.long_distance,
+            "short_distance": self.short_distance,
+            "contacts": self.contacts,
+            "mobile": self.mobile,
+            "email": self.email,
+            "address": self.address,
+            "is_admin": self.is_admin
+        }
 
 
 # 用户表
@@ -59,7 +86,7 @@ class User(BaseModel, db.Model):
 
 
 # 分机表
-class SipUser(BaseModel, db.Model):
+class SipUser(BaseModel):
     """
     分机表 一个公司账号可以有多个分机，不同公司的分机号不同
     """

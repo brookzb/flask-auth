@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from flask import request
+from flask import request, jsonify
 from flask_restful import Resource, reqparse, marshal_with
 
 from auth import auth as auths
@@ -45,7 +45,6 @@ class CompanyResourceApi(Resource):
         self.parser.add_argument("long_distance", type=float, required=True, location="form")
         self.parser.add_argument("short_distance", type=float, required=True, location="form")
 
-    @marshal_with(company_info_fields)
     def get(self, company_id):
         """
         查询公司详情
@@ -53,7 +52,9 @@ class CompanyResourceApi(Resource):
         :return:
         """
         company = Company.query.filter_by(id=company_id).first()
-        return company
+        if not company:
+            pass
+        return jsonify(company.to_dict())
 
     def put(self, company_id):
         """
@@ -70,7 +71,7 @@ class CompanyResourceApi(Resource):
         for field, value in args.items():
             setattr(company, field, value)
         db.session.commit()
-        return {"id": company.id}
+        return jsonify(company.to_dict())
 
     def post(self):
         """
@@ -102,7 +103,7 @@ class CompanyResourceApi(Resource):
         db.session.add(new_company)
         db.session.commit()
 
-        return {"id": new_company.id}
+        return jsonify(new_company.to_dict())
 
     def delete(self, company_id):
         """

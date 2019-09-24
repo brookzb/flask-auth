@@ -17,7 +17,7 @@ app = Flask(__name__)
 app.register_blueprint(files.files_opt, url_prefix="/api/v1/file")
 app.register_blueprint(todos.todos_opt, url_prefix="/api/v1/todo")
 app.register_blueprint(users.users_opt, url_prefix="/api/v1/user")
-app.register_blueprint(company.company_opt, url_prefix="/api/v1/company")
+# app.register_blueprint(company.company_opt, url_prefix="/api/v1/company")
 # app.register_blueprint(callcenter.call_opt, url_prefix="/api/v1/call")
 
 app.config.from_object(config)
