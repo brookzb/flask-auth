@@ -15,7 +15,7 @@ gunicorn==19.9.0
 hashids==1.2.0
 itsdangerous==1.1.0
 Jinja2==2.10.1
-Mako==1.0.7
+Mako==1.2.2
 MarkupSafe==1.1.1
 pycparser==2.19
 python-dateutil==2.8.0
